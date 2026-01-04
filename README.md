@@ -227,29 +227,6 @@ GET    /api/employees/                # List workforce
 
 ---
 
-## 📁 Project Structure
-
-```
-aerospace-mes/
-├── core/                   # Django project settings
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-├── apps/
-│   ├── production/         # Part fabrication module
-│   ├── assembly/           # Aircraft assembly module
-│   ├── inventory/          # Stock management module
-│   └── accounts/           # User & RBAC module
-├── templates/              # HTML templates
-├── static/                 # CSS, JS, images
-├── Dockerfile
-├── docker-compose.yml
-├── requirements.txt
-└── manage.py
-```
-
----
-
 ## 🤝 Contributing
 
 1. Fork the repository
