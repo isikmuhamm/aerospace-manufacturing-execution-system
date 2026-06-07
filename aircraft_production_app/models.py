@@ -300,9 +300,11 @@ class WorkOrder(models.Model):
         """
         İş emrini fiziksel olarak silmek yerine "yumuşak silme" (soft delete) uygular:
         - İş emrinin durumunu 'CANCELLED' olarak günceller.
-        - Bu iş emriyle ilişkili tüm monte edilmiş hava araçlarının 'work_order' alanını None yapar,
-          böylece uçaklar iş emrinden ayrılır ancak var olmaya devam eder.
+        - Eğer bu iş emriyle ilişkili aktif (ACTIVE) durumda uçaklar varsa iptal edilmesini engeller.
         """
+        if self.completed_aircrafts_for_order.filter(status=AircraftStatusChoices.ACTIVE).exists():
+            raise ValidationError("Bu iş emrine bağlı aktif durumda monte edilmiş hava araçları bulunduğundan iş emri iptal edilemez.")
+
         for aircraft in self.completed_aircrafts_for_order.all():
             aircraft.work_order = None
             aircraft.save()
@@ -717,15 +719,16 @@ class Aircraft(models.Model):
 
             prefix = f"{self.aircraft_model.name}-" 
             
-            last_serial_obj = Aircraft.objects.filter(
+            # Lock the matching rows using select_for_update() to avoid race conditions
+            last_aircraft = Aircraft.objects.select_for_update().filter(
                 serial_number__startswith=prefix
-            ).aggregate(max_sn_suffix=Max('serial_number'))
+            ).order_by('-serial_number').first()
             
             max_suffix_num = 0
-            if last_serial_obj and last_serial_obj.get('max_sn_suffix'):
+            if last_aircraft and last_aircraft.serial_number:
                 try:
                     # Son tireden sonraki kısmı alıp integer'a çevir
-                    suffix_str = last_serial_obj['max_sn_suffix'].split('-')[-1]
+                    suffix_str = last_aircraft.serial_number.split('-')[-1]
                     max_suffix_num = int(suffix_str)
                 except (IndexError, ValueError, TypeError):
                     pass # Hata durumunda max_suffix_num = 0 kalır
