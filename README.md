@@ -112,6 +112,39 @@ The data model utilizes `OneToOne` and `ForeignKey` relationships to ensure that
 
 ---
 
+## 🔧 Architectural Integrity & Best Practices
+
+To make this project production-ready and prevent common pitfalls in enterprise MES systems, several key architectural fixes were introduced:
+
+### 🔒 Concurrency-Safe Serial Number Generation
+- **Problem:** When multiple users simultaneously save new aircraft or parts, sequential serial number generation (e.g., `TB2-0001`, `TB2-0002`) can cause race conditions, resulting in duplicate serial numbers and database crashes.
+- **Solution:** Integrated PostgreSQL row-level locks using Django's `select_for_update()` inside atomic database transactions (`@transaction.atomic`), ensuring sequential serial numbers are assigned safely under high concurrency.
+
+### 🛡️ Django Model Validation in DRF Serializers (DRF-to-Model Bridge)
+- **Problem:** Django Rest Framework (DRF) serializers bypass standard Django model `clean()` validations on updates by default, causing business rules (e.g., team-to-category constraints) to be ignored on API writes.
+- **Solution:** Custom validation hooks were implemented inside serializers to invoke `instance.clean()` and convert standard Django `ValidationError` exceptions to DRF's structured API error responses.
+
+### 📊 Database N+1 Query Prevention
+- **Problem:** Stock level reports with nested loops of models can fetch data repeatedly, causing dozens of database queries for a single API call.
+- **Solution:** Implemented pre-evaluation of QuerySets into cached Python lists, reducing the database footprint to a single aggregated query.
+
+### 🔄 Intelligent Signal Synchronizations & Soft Deletes
+- **Problem:** When an aircraft is soft-deleted (recycled), it shouldn't count towards completed work orders, and its components should instantly return to inventory.
+- **Solution:** Django signals were updated to ignore soft-deleted records when recalculating `WorkOrder` progress and automatically release components back into the active stock.
+
+---
+
+## 🧪 Running Tests & TDD
+
+The project includes a comprehensive unit testing suite written with `pytest` and Django's testing tools to verify database constraints, signals, and API views.
+
+To run the test suite inside the Docker environment:
+```bash
+docker-compose exec web pytest
+```
+
+---
+
 ## 🚀 Installation
 
 ### Prerequisites
