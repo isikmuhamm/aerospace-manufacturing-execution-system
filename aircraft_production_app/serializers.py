@@ -175,6 +175,20 @@ class PartSerializer(serializers.ModelSerializer):
             'part_type', 'produced_by_team', 'created_by_personnel', 'status'
         ]
 
+    def validate(self, attrs):
+        if self.instance:
+            instance = self.instance
+            for field, value in attrs.items():
+                setattr(instance, field, value)
+            
+            from django.core.exceptions import ValidationError as DjangoValidationError
+            try:
+                instance.clean()
+            except DjangoValidationError as e:
+                raise serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+        return attrs
+
+
 class AircraftAssemblySerializer(serializers.Serializer):
     """
     AircraftModel ID'si vb. alarak Hava Aracı montajını yönetmek için kullanılan serializer.
@@ -287,6 +301,20 @@ class AircraftSerializer(serializers.ModelSerializer):
             'wing_sn', 'fuselage_sn', 'tail_sn', 'avionics_sn',
             'wing', 'fuselage', 'tail', 'avionics', 'status', 'assembled_by_team', 'assembled_by_personnel'
         ]
+
+    def validate(self, attrs):
+        if self.instance:
+            instance = self.instance
+            for field, value in attrs.items():
+                setattr(instance, field, value)
+            
+            from django.core.exceptions import ValidationError as DjangoValidationError
+            try:
+                instance.clean()
+            except DjangoValidationError as e:
+                raise serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+        return attrs
+
 
 class WorkOrderSerializer(serializers.ModelSerializer):
     """

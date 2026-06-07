@@ -555,9 +555,11 @@ def StockLevelsAPIView(request):
             aircraft_models_for_parts = aircraft_models_for_parts.filter(id=aircraft_model_id_filter)
 
         all_combinations = []
-        if aircraft_models_for_parts.exists() and part_types_to_query.exists():
-            for am_part in aircraft_models_for_parts:
-                for pt in part_types_to_query:
+        aircraft_models_list = list(aircraft_models_for_parts)
+        part_types_list = list(part_types_to_query)
+        if aircraft_models_list and part_types_list:
+            for am_part in aircraft_models_list:
+                for pt in part_types_list:
                     all_combinations.append({'am_id': am_part.id, 'am_name': am_part.get_name_display(),
                                              'pt_id': pt.id, 'pt_name': pt.get_category_display()})
 
